@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31612.314
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TacitCypher", "TacitCypher\TacitCypher.fsproj", "{B2B85E15-B001-440A-B972-B2D1A6810ADC}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TacitCypher.Tests", "TacitCypher.Tests\TacitCypher.Tests.fsproj", "{94A2ADB1-B525-45C8-8554-D0E54989044D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B2B85E15-B001-440A-B972-B2D1A6810ADC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2B85E15-B001-440A-B972-B2D1A6810ADC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2B85E15-B001-440A-B972-B2D1A6810ADC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2B85E15-B001-440A-B972-B2D1A6810ADC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94A2ADB1-B525-45C8-8554-D0E54989044D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94A2ADB1-B525-45C8-8554-D0E54989044D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94A2ADB1-B525-45C8-8554-D0E54989044D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94A2ADB1-B525-45C8-8554-D0E54989044D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {DAE435D0-52D3-4429-B9F0-F651134D8439}
+	EndGlobalSection
+EndGlobal
