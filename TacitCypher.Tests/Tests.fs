@@ -1,21 +1,26 @@
 namespace TacitCypher.Tests
 
-open System
 open Microsoft.VisualStudio.TestTools.UnitTesting
 
-open Neo4j.Driver
 open TacitCypher
 
-open TacitCypher.Cypher
-
-open System.Text.Json
+open ExpectedObjects
+open ExpectedObjects.Strategies
 
 [<AutoOpen>]
 module TestContext = 
+    [<NodeClass>]
     type Person = {
         Name: string
         Color: string
     }
+
+    [<RltnClass>]
+    type Likes = {
+        Amount: float
+    }
+
+    let veryMuch = {Amount = 999.0}
 
     type Technology () = class end
 
@@ -30,77 +35,140 @@ module TestContext =
 
     let BoundResult<'a> = Unchecked.defaultof<'a>
 
-    let (?)<'a> (lhs: obj) (rhs: string) =
-        lhs :?> 'a
+[<TestClass>]
+type TestGraphing () =
+    let node = Node.Empty
+    let rltn = Rltn.Empty
+    let path = Path.Unit
+
+    let a: Path list = [
+        () -- node
+        () -- path
+        () --> node
+        () --> path
+        () <-- node
+        () <-- path
+
+        node -- ()
+        node -- node
+        node -- path
+        node --> ()
+        node --> node
+        node --> path
+        node <-- ()
+        node <-- node
+        node <-- path
+
+        path -- ()
+        path -- node
+        path -- path
+        path --> ()
+        path --> node
+        path --> path
+        path <-- ()
+        path <-- node
+        path <-- path
+
+        () -| rltn |- ()
+        () -| rltn |- node
+        () -| rltn |- path
+        () -| rltn |-> ()
+        () -| rltn |-> node
+        () -| rltn |-> path
+        () <-| rltn |- ()
+        () <-| rltn |- node
+        () <-| rltn |- path
+
+        node -| rltn |- ()
+        node -| rltn |- node
+        node -| rltn |- path
+        node -| rltn |-> ()
+        node -| rltn |-> node
+        node -| rltn |-> path
+        node <-| rltn |- ()
+        node <-| rltn |- node
+        node <-| rltn |- path
+
+        path -| rltn |- ()
+        path -| rltn |- node
+        path -| rltn |- path
+        path -| rltn |-> ()
+        path -| rltn |-> node
+        path -| rltn |-> path
+        path <-| rltn |- ()
+        path <-| rltn |- node
+        path <-| rltn |- path
+
+        node -- () -- ()
+        node -- () -- () -- ()
+        node -- () -- () -- () -- ()
+        node -- () -- () -- () -- () -- ()
+    ]
+
+    let b: Partial list = [
+        () -| rltn
+        () <-| rltn
+        node -| rltn
+        node <-| rltn
+        path -| rltn
+        path <-| rltn
+    ]
 
 [<TestClass>]
 type TestQueryBuilding () =
-    
-    let toJson = JsonSerializer.Serialize
+    let R o = {Rltn.Name = None; Label = None; Props = Some o}
+    let N o = {Node.Name = None; Label = None; Props = Some o}
+
+    let expectObj o =
+        o.ToExpectedObject(
+            fun c->
+                //c.CompareByValue()
+                c.RemoveStrategy<EqualsOverrideComparisonStrategy>()
+                c.RemoveStrategy<ComparableComparisonStrategy>()
+                |> ignore)
 
     [<TestMethod>]
     member this.TestCompExpr () =
-        let a = 2
         let cypher = CypherBuilder("bolt://localhost:7687", Neo4j.Driver.AuthTokens.Basic(@"Neo", @"12345"))
 
-        let LIKES = ()
-        let N = ()
-
-        
-
-        let (--) lhs rhs =
-            lhs, rhs
-
-        let (-->) lhs rhs =
-            ()
-
-        let _ = cypher {
-            let p, t = MATCH <| (N?p: Person) -- LIKES --> (N?t: Technology)
-            
-            return t
-        }
-
-        MATCH (CypherPath<_>())
+        ()
 
     [<TestMethod>]
-    member this.TestGraphing () =
-        Assert.AreEqual(
-            Graph(
-                {Node.BindName = None; Label = Auto; Properties = Some (bob :> obj)},
-                {Rltn.BindName = None; Label = Auto; Properties = Some (claire :> obj)},
-                JustNode (Node.Empty)),
-            (bob)-|claire|-()
-        )
+    member this.TestGraphing0 () =
+        let g = { First = N(bob); Rest= [Undirected, R(veryMuch), N(claire) ] }
+        let g' = N(bob)-|R(veryMuch)|-N(claire)
+        (expectObj g).ShouldEqual (g')
+
+    [<TestMethod>]
+    member this.TestGraphing1 () =
+        let g = { First = Node.Empty; Rest= [Right, R(veryMuch), Node.Empty ] }
+        let g' = ()-|R(veryMuch)|->()
+        (expectObj g).ShouldEqual(g')
+
+    [<TestMethod>]
+    member this.TestGraphing2 () =
+        let g  = { First = N(bob); Rest= [Left, R(veryMuch), Node.Empty ] }
+        let g' = N(bob)<-|R(veryMuch)|-()
+        (expectObj g).ShouldEqual(g')
 
     [<TestMethod>]
     member this.TestSerialize () =
 
-        Assert.AreEqual( @"(:Person {name: 'Bob \'\\ Killer\' Hilber', color: 'Blue'})", Cypher.AsAnonNode true bob )
+        Assert.AreEqual( @"(:Person {name: 'Bob \'\\ Killer\' Hilber', color: 'Blue'})", N(bob).ToString() )
 
-    [<TestMethod>]
-    member this.TestCodeQuote () =
+        Assert.AreEqual(
+            @"(:Person {name: 'Bob \'\\ Killer\' Hilber', color: 'Blue'})-[:LIKES {amount: 999}]-()",
+            (N(bob)-|R(veryMuch)|-()).ToString()
+        )
 
-        let MATCH (q: Quotations.Expr<Path>) = ()
 
-        let mutable p, q, r = BoundResult in
+//[<TestClass>]
+//type TestQueryExecution () =
 
-            MATCH <@ (p:Person)-|(r:Person)|-(q:Person) @>
+//    let db = Neo4j("bolt://localhost:7687", Neo4j.Driver.AuthTokens.Basic(@"Neo", @"12345"))
 
-        printfn "%s" p.Name
-
-        let mutable p', q', r' = BoundResult in
-        
-            MATCH <@ (p':int)-|[]|-(q':int) @>
-
-        ()
-
-[<TestClass>]
-type TestQueryExecution () =
-
-    let db = Neo4j("bolt://localhost:7687", Neo4j.Driver.AuthTokens.Basic(@"Neo", @"12345"))
-
-    [<TestMethod>]
-    member this.TestConnect () =
-        ()
+//    [<TestMethod>]
+//    member this.TestConnect () =
+//        ()
 
 
