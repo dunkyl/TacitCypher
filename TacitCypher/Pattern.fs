@@ -92,6 +92,14 @@ type Partial =
 
 // OPERTATORS
 
+// path producing operators:
+// infix (5) : --, -->, <--, |-, |->
+// LHS (4+N) : () | Node | BoundNode<'T> | PathUnbound | Path<'T0> | ... | Path<'T0 ... 'T_N>
+// RHS (4+N) : () | Node | BoundNode<'T> | PathUnbound | Path<'T0> | ... | Path<'T0 ... 'T_N>
+// except (5): () op ()
+// total count = 75 + 40N + 5N²
+
+
 //  LHS   OP   RHS    IN
 // ------------------------
 

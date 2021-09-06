@@ -19,6 +19,7 @@
     <Compile Include="Serialization.fs" />
     <Compile Include="Communication.fs" />
     <Compile Include="Pattern.fs" />
+    <Compile Include="Binding.fs" />
     <Compile Include="Library.fs" />
   </ItemGroup>
 
