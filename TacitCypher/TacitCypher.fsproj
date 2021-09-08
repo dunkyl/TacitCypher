@@ -18,13 +18,18 @@
   <ItemGroup>
     <Compile Include="Serialization.fs" />
     <Compile Include="Communication.fs" />
+    <Compile Include="Pattern3.fs" />
+    <Compile Include="Pattern2.fs" />
     <Compile Include="Pattern.fs" />
-    <Compile Include="Binding.fs" />
+    <Compile Include="Attributes.fs" />
+    <Compile Include="Query.fs" />
+    <Compile Include="Clause.fs" />
     <Compile Include="Library.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Neo4j.Driver" Version="4.3.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Ply" Version="0.3.1" />
   </ItemGroup>
 

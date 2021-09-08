@@ -1,7 +1,11 @@
 ﻿module Serialization
 
 open System.Text.RegularExpressions
-open System.Text.Json
+//open System.Text.Json
+
+open Newtonsoft.Json
+open System.IO
+open Newtonsoft.Json.Serialization
 
 // Cypher Type - Dotnet Type
 // Integer - Int32 | Int64 | Numerics.BigInteger
@@ -49,66 +53,24 @@ let ConformNodeLabel (label: string) =
     label.ToLower() |> ToTitleCase
 
 let ConformRelationLabel (label: string) =
-    let a = [1; 2; 3]
-    a.[^2]
     label.ToUpper()
 
-let rec AsPropertyLiteral (o: obj) =
-    let mutable opts = JsonSerializerOptions()
-    let mutable namepolicy = JsonNamingPolicy.CamelCase
-    opts.PropertyNamingPolicy <- namepolicy
-    opts.DefaultIgnoreCondition <- Serialization.JsonIgnoreCondition.WhenWritingNull
-    JsonSerializer.Serialize(o, opts)
-    //match o with
-    //| :? string as v ->
-    //    "'" +
-    //    (System.Text.Json.JsonEncodedText.Encode v).ToString()
-    //        .Replace(@"\u0022", "\"")
-    //        .Replace(@"\u0027", "\\'")
-    //    + "'"
-    //| :? int64 as v ->
-    //    v.ToString()
-    //| :? int as v ->
-    //    v.ToString()
-    //| :? Numerics.BigInteger as v ->
-    //    v.ToString()
-    //| :? float32 as v ->
-    //    v.ToString()
-    //| :? float as v ->
-    //    v.ToString()
-    //| :? option<obj> as v ->
-    //    AsPropertyLiteral v.Value
-    //| :? System.Collections.Generic.IEnumerable<obj> as vs ->
-    //    "[" +
-    //    String.Join(", ", Seq.map AsPropertyLiteral vs)
-    //    + "]"
-    //| :? unit ->
-    //    ""
-    //| _ ->
-    //    let t = o.GetType()
-    //    "{" +
-    //    String.Join(", ", [
-    //        for prop in t.GetProperties() ->
-    //            if prop.GetIndexParameters().Length = 0 then
-    //                let cypherName = prop.Name |> CleanName |> ConformName
-    //                let value = 
-    //                    match prop.GetValue o with
-    //                    | :? option<obj> as v ->
-    //                        v.Value
-    //                    | v -> v
-    //                if isNull value then
-    //                    ""
-    //                else
-    //                    $"{cypherName}: {AsPropertyLiteral value}"
-    //            else
-    //                let cypherName = prop.Name |> CleanName |> ConformName
-    //                $"{cypherName}: indexed"
-    //    ])
-    //    + "}"
+let AsPropertyLiteral (x: obj) =
+    let contr = DefaultContractResolver( NamingStrategy = CamelCaseNamingStrategy())
+    //let settings = JsonSerializerSettings( ContractResolver = contr)
+    let serializer = JsonSerializer( ContractResolver = contr, NullValueHandling= NullValueHandling.Ignore )
+    use stringWriter = new StringWriter()
+    use jsonWriter = new JsonTextWriter(stringWriter, QuoteName = false, QuoteChar = '\'')
+    serializer.Serialize (jsonWriter, x)
+    stringWriter.ToString ()
 
-let SerializeInner bindName' label properties' =
+let SerializeInner bindName' conform label properties' =
     let bindName = Option.defaultValue "" (Option.map (CleanName >> ConformName) bindName')
-    bindName + label +
+    let label' =
+        match label with
+        | None -> ""
+        | Some l -> ":" + conform l
+    bindName + label' +
     match properties' with
     | Some p -> " " + AsPropertyLiteral p
     | None -> ""
