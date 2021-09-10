@@ -17,10 +17,11 @@
 
   <ItemGroup>
     <Compile Include="Serialization.fs" />
+    <Compile Include="Pattern_via_interface.fs" />
     <Compile Include="Communication.fs" />
     <Compile Include="Pattern3.fs" />
-    <Compile Include="Pattern2.fs" />
-    <Compile Include="Pattern.fs" />
+    <Compile Include="Pattern_via_static_infer.fs" />
+    <Compile Include="Pattern_via_overload.fs" />
     <Compile Include="Attributes.fs" />
     <Compile Include="Query.fs" />
     <Compile Include="Clause.fs" />

@@ -1,6 +1,8 @@
-﻿namespace TacitCypher
+﻿namespace TacitCypher.N
 
 open Serialization
+
+type Direction = Undirected | Left | Right
 
 type Node =
     {
@@ -49,9 +51,6 @@ type BoundRltn<'T> =
     }
 
     override this.ToString () = this.Rltn.Serialize (Some this.Name)
-
-//type PartialDirection = Undirected | Left
-type Direction = Undirected | Left | Right
 
 type Path = 
     {

@@ -7,6 +7,8 @@ open TacitCypher
 open ExpectedObjects
 open ExpectedObjects.Strategies
 
+open Pattern
+
 [<AutoOpen>]
 module TestContext = 
     open Attributes  
@@ -44,27 +46,27 @@ module TestContext =
 
     let BoundResult<'a> = Unchecked.defaultof<'a>
 
-[<AutoOpen>]
-module Helpers =
-    let N (props: 't) = { Node.Label = Some (typeof<'t>.Name); Props = Some (props :> obj)  }
-    let BindN (props: 't) name = { Name = name; Node = N props }
+//[<AutoOpen>]
+//module Helpers =
+//    let N (props: 't) = { Node.Label = Some (typeof<'t>.Name); Props = Some (props :> obj)  }
+//    let BindN (props: 't) name = { Name = name; Node = N props }
 
-    let R (props: 't) = { Rltn.Label = Some (typeof<'t>.Name); Props = Some (props :> obj)  }
-    let BindR (props: 't) name = { Name = name; Rltn = R props }
+//    let R (props: 't) = { Rel.Label = Some (typeof<'t>.Name); Props = Some (props :> obj)  }
+//    let BindR (props: 't) name = { Name = name; Rel = R props }
 
 [<TestClass>]
 type TestGraphing () =
 
-    let node = Node.Empty
-    let rltn = Rltn.Empty
+    let node = Node.Any
+    let rltn = Rel.Any
     let path = Path.Unit
 
     let node_props = { NodeProperty = 2 }
-    let rltn_props = { NodeProperty = 2 }
+    let rltn_props = { RelationProperty = 2 }
 
-    let node_t: BoundNode<NodeLabel> = BindN node_props "n"
-    let rltn_t: BoundRltn<RelationLabel> = BindR rltn_props "r"
-    let path_t: BoundPath<NodeLabel> = BoundPath<NodeLabel>.OfBoundNode node_t
+    let node_t: Node<NodeLabel> = BindN node_props "n"
+    let rltn_t: Rel<RelationLabel> = BindR rltn_props "r"
+    let path_t: Path<NodeLabel> = { First = node_t.Node, Some node_t.Name; Rest = [] }
 
     let a: Path list = [
         () -- node
@@ -139,7 +141,7 @@ type TestGraphing () =
         path <-| rltn
     ]
 
-    let c: BoundPath<NodeLabel> list = [
+    let c: Path<NodeLabel> list = [
         () -- node_t
         () -- path_t
         () --> node_t
@@ -203,7 +205,7 @@ type TestGraphing () =
         node_t -- () -- () -- () -- () -- ()
     ]
 
-    let d: BoundPath<RelationLabel> list = [
+    let d: Path<RelationLabel> list = [
         () -| rltn_t |- ()
         () -| rltn_t |- node
         () -| rltn_t |- path
@@ -235,7 +237,7 @@ type TestGraphing () =
         path <-| rltn_t |- path
     ]
 
-    let e: BoundPath<NodeLabel * RelationLabel> list = [
+    let e: Path<NodeLabel * RelationLabel> list = [
         node_t -| rltn_t |- ()
         node_t -| rltn_t |- node
         node_t -| rltn_t |- path
@@ -257,7 +259,7 @@ type TestGraphing () =
         path_t <-| rltn_t |- path
     ]
 
-    let f: BoundPath<NodeLabel * NodeLabel> list = [
+    let f: Path<NodeLabel * NodeLabel> list = [
         node_t -- node_t
         node_t -- path_t
         node_t --> node_t
@@ -287,7 +289,7 @@ type TestGraphing () =
         path_t <-| rltn |- path_t
     ]
 
-    let g: BoundPath<(NodeLabel * RelationLabel) * NodeLabel> list = [
+    let g: Path<(NodeLabel * RelationLabel) * NodeLabel> list = [
         node_t -| rltn_t |- node_t
         node_t -| rltn_t |- path_t
         node_t -| rltn_t |-> node_t
@@ -322,19 +324,19 @@ type TestQueryBuilding () =
 
     [<TestMethod>]
     member this.TestGraphing0 () =
-        let g = { Path.First = N(bob); Rest = [Undirected, R(veryMuch), N(claire) ] }
+        let g: Path = { First = N(bob); Rest = [Undirected, R(veryMuch), N(claire) ] }
         let g' = N(bob)-|R(veryMuch)|-N(claire)
         (expectObj g).ShouldEqual (g')
 
     [<TestMethod>]
     member this.TestGraphing1 () =
-        let g = { Path.First = Node.Empty; Rest= [Right, R(veryMuch), Node.Empty ] }
+        let g: Path = { First = Node.Any; Rest= [Right, R(veryMuch), Node.Any ] }
         let g' = ()-|R(veryMuch)|->()
         (expectObj g).ShouldEqual(g')
 
     [<TestMethod>]
     member this.TestGraphing2 () =
-        let g  = { Path.First = N(bob); Rest= [Left, R(veryMuch), Node.Empty ] }
+        let g: Path = { First = N(bob); Rest= [Left, R(veryMuch), Node.Any ] }
         let g' = N(bob)<-|R(veryMuch)|-()
         (expectObj g).ShouldEqual(g')
 
@@ -352,7 +354,7 @@ type TestQueryBuilding () =
         )
 
     [<TestMethod>]
-    member this.TestSerializeBoundPath () =
+    member this.TestSerializePath2 () =
 
         Assert.AreEqual(
             @"(p:Person {name:'Bob',color:'Blue'})-[rel:LIKES {amount:999.0,timesBroughtUp:6}]-()",
