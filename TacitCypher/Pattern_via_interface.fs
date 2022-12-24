@@ -49,6 +49,7 @@ and Node = {
 type IPath<'A> =
     abstract member First: Node MaybeNamed
     abstract member Rest: (Direction * Rel MaybeNamed * Node MaybeNamed) list
+    abstract member Names:unit -> string list
 
 type Node<'A> = {
     Name: string
@@ -57,6 +58,7 @@ type Node<'A> = {
     interface IPath<'A> with
         member this.First = this.Node, Some this.Name
         member this.Rest = []
+        member this.Names () = [this.Name]
 
     override this.ToString () = this.Node.Serialize (Some this.Name)
 
@@ -114,9 +116,29 @@ type Path<'A> = {
     interface IPath<'A> with
         member this.First = this.First
         member this.Rest = this.Rest
+        member this.Names() =
+            let nameat (_, (_, a), (_, b)) = [a; b]
+            List.choose id ((let a, b = this.First in b)::(List.concat (List.map nameat this.Rest)))
 
     override this.ToString() =
         serializePath this.First this.Rest
+
+    member this.ReturnValues (): 'A =
+        let args = [|
+            let firstNode, name = this.First
+            match name with
+            | Some n -> yield firstNode.Props.Value
+            | None -> ()
+            for (_, (rel, relName), (node, nodeName)) in this.Rest do
+                match relName with
+                | Some n -> yield rel.Props.Value
+                | None -> ()
+                match nodeName with
+                | Some n -> yield node.Props.Value
+                | None -> ()
+        |]
+        FSharp.Reflection.FSharpValue.MakeTuple(args, typeof<'A>) :?> 'A
+        
 
 let promote<'a> (path: IPath) =
     {
@@ -259,7 +281,7 @@ type Node with
 type Node<'A> with
     static member (  --  ) (lhs: Node<_>, rhs: IPath)    = lhs :> IPath<_>  -| Rel.Any |-  rhs
     static member (  --  ) (lhs: Node<_>, rhs: IPath<_>) = lhs :> IPath<_>  -| Rel.Any |-  rhs
-    static member (  --  ) (lhs: unit, rhs: Node<'A>)     = lhs -| Rel.Any |- rhs
+    static member (  --  ) (lhs: unit, rhs: Node<'A>)    = lhs -| Rel.Any |- rhs
     static member (  --  ) (lhs: Node<_>, rhs: unit)     = lhs -| Rel.Any |- rhs
     static member (  --> ) (lhs: Node<_>, rhs: IPath)    = lhs :> IPath<_>  -| Rel.Any |-> rhs
     static member (  --> ) (lhs: Node<_>, rhs: IPath<_>) = lhs :> IPath<_>  -| Rel.Any |-> rhs
@@ -274,9 +296,14 @@ type Node<'A> with
 module Helpers' =
     let N (props: 't) = { Node.Label = Some (typeof<'t>.Name); Props = Some (props :> obj)  }
     let BindN (props: 't) name = { Name = name; Node = N props }: Node<'t>
+    let BindNErased<'t> (props: obj) name = { Name = name; Node = N props }: Node<'t>
+    let NLabeled<'t> = { Node.Label = Some (typeof<'t>.Name); Props = None  }
+    let BindNLabeled<'t> name = { Name = name; Node = NLabeled<'t> }: Node<'t>
 
     let R (props: 't) = { Rel.Label = Some (typeof<'t>.Name); Props = Some (props :> obj)  }
     let BindR (props: 't) name = { Name = name; Rel = R props }: Rel<'t>
+
+    let RLabeled<'t> = { Rel.Label = Some (typeof<'t>.Name); Props = None }
 
 module Ops =
 
@@ -286,4 +313,6 @@ module Ops =
 
     let partu = nodeu -| relu
 
-    let pathb = BindN () "a" -| (Rel.Any) |- nodeu
+    type X = class end
+
+    let pathb = BindNLabeled<X> "a" -| (Rel.Any) |- nodeu

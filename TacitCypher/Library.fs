@@ -13,9 +13,8 @@ type CypherBuilder (url: string, auth: IAuthToken) =
 
     member _.Neo4j = Neo4j.Driver.GraphDatabase.Driver(url, auth)
 
-    member this.Zero () = Query<unit>()
+    member this.Zero () = Query<unit>("RETURN")
 
-    member this.Return (inner: 'T): Query<'T> =
-        Query<_>()
+    member this.Return (inner: 'T): Query<'T> = Query<_>("um")
 
 

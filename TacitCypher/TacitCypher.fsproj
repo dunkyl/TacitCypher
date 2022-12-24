@@ -7,17 +7,18 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <OtherFlags>--langversion:preview</OtherFlags>
+    <OtherFlags></OtherFlags>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <OtherFlags>--langversion:preview</OtherFlags>
+    <OtherFlags></OtherFlags>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="Serialization.fs" />
     <Compile Include="Pattern_via_interface.fs" />
+    <Compile Include="Pattern_langbindings.fs" />
     <Compile Include="Communication.fs" />
     <Compile Include="Pattern3.fs" />
     <Compile Include="Pattern_via_static_infer.fs" />

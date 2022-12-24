@@ -6,6 +6,9 @@ open TacitCypher
 
 open ExpectedObjects
 open ExpectedObjects.Strategies
+open Neo4j.Driver
+
+open FSharp.Control.Tasks
 
 open Pattern
 
@@ -40,7 +43,7 @@ module TestContext =
     let claire = {Name = "Claire"; Color = "Yellow"}
 
     let manybob = [
-        for x in [1..100] ->
+        for x in [1..20] ->
             { Name = "Bob#"+x.ToString(); Color = "Blue" }
        ]
 
@@ -343,13 +346,13 @@ type TestQueryBuilding () =
     [<TestMethod>]
     member this.TestSerializeNode () =
 
-        Assert.AreEqual( @"(:Person {name:'Bob',color:'Blue'})", N(bob).ToString() )
+        Assert.AreEqual( "(:Person {name:'Bob',color:'Blue'})", N(bob).ToString() )
 
     [<TestMethod>]
     member this.TestSerializePath () =
 
         Assert.AreEqual(
-            @"(:Person {name:'Bob',color:'Blue'})-[:LIKES {amount:999.0,timesBroughtUp:6}]-()",
+            "(:Person {name:'Bob',color:'Blue'})-[:LIKES {amount:999.0,timesBroughtUp:6}]-()",
             (N(bob)-|R(veryMuch)|-()).ToString()
         )
 
@@ -357,7 +360,7 @@ type TestQueryBuilding () =
     member this.TestSerializePath2 () =
 
         Assert.AreEqual(
-            @"(p:Person {name:'Bob',color:'Blue'})-[rel:LIKES {amount:999.0,timesBroughtUp:6}]-()",
+            "(p:Person {name:'Bob',color:'Blue'})-[rel:LIKES {amount:999.0,timesBroughtUp:6}]-()",
             (BindN bob "p" -| BindR veryMuch "rel" |- ()).ToString()
         )
 
@@ -366,21 +369,156 @@ type TestQueryBuilding () =
 
         for i, bob' in List.indexed manybob do
 
-            Assert.AreEqual( @$"(:Person {{name:'Bob#{i+1}',color:'Blue'}})", N(bob').ToString() )
+            Assert.AreEqual( $"(:Person {{name:'Bob#{i+1}',color:'Blue'}})", N(bob').ToString() )
 
         //Assert.AreEqual(
         //    @"(:Person {name:'Bob',color:'Blue'})-[:LIKES {amount:999.0,timesBroughtUp:6}]-()",
         //    (N(bob)-|R(veryMuch)|-()).ToString()
         //)
 
+open Clause
+open System.Threading.Tasks
 
-//[<TestClass>]
-//type TestQueryExecution () =
+type IsCoworkersWith () = class end
 
-//    let db = Neo4j("bolt://localhost:7687", Neo4j.Driver.AuthTokens.Basic(@"Neo", @"12345"))
+[<TestClass>]
+type TestQuerys2 () =
 
-//    [<TestMethod>]
-//    member this.TestConnect () =
-//        ()
+    let db = GraphDatabase.Driver("bolt://localhost:7687", Neo4j.Driver.AuthTokens.Basic(@"neo4j", @"12345"))
+
+    [<TestMethod>]
+    member this.Test1 () =
+
+        let zack = { Name = "Zack"; Color = "Coral" }
+        let yvon = { Name = "Yvon"; Color = "Lime" }
+        
+        //  (z:Person) -[:IS_COWORKERS_WITH]-> (y:Person {name: "Yvon"})
+        //  N<Person>("z") -|R<IsCoworkersWith>()|-> N<Person>("y", {|name = "Yvon"|})
+        let pattern =
+            BindNErased<Person> {||} "z" -| RLabeled<IsCoworkersWith> |-> BindNErased<Person> {|name = "Yvon"|} "y"
+
+        let (zack_returned, yvon_returned) = pattern.ReturnValues()
+
+        ()
+
+[<TestClass>]
+type TestQuerys () =
+
+    let db = GraphDatabase.Driver("bolt://localhost:7687", Neo4j.Driver.AuthTokens.Basic(@"neo4j", @"12345"))
+
+    
+
+    [<TestMethod>]
+    member this.TestConnect () =
+        ()
+
+    [<TestMethod>]
+    member this.TestCreate () =
+        
+        let q = CREATE (BindN bob "p")
+
+        Assert.AreEqual(
+            $"CREATE (p:Person {{name:'Bob',color:'Blue'}})\n\
+              RETURN p",
+            q.ToString() )
+
+        task {
+            let! result = q.Run db
+            for r in result do
+                let keys = r.Values.Keys
+                let values = r.Values.Values
+                let r' = Seq.zip keys values |> Map.ofSeq
+                printfn $"RECORD: {r'}"
+        }
+        |> Async.AwaitTask |> Async.RunSynchronously
+
+    [<TestMethod>]
+    member this.TestMatch () =
+        
+        let q = MATCH (BindN bob "p")
+
+        Assert.AreEqual(
+            $"MATCH (p:Person {{name:'Bob',color:'Blue'}})\n\
+              RETURN p",
+            q.ToString() )
+
+        task {
+            let! _ = (CREATE (N bob)).Run db
+
+            let! result = q.Run db
+            for r in result do
+                let keys = r.Values.Keys
+                let values = r.Values.Values |> Seq.map Query.assume<Person>
+                let r' = Seq.zip keys values |> Map.ofSeq
+                printfn $"RECORD: {r'}"
+
+            let! _ = (DELETE (BindN bob "p")).Run db
+            return ()
+        }
+        |> Async.AwaitTask |> Async.RunSynchronously
+
+        let a (x: Neo4j.Driver.INode) = 
+            x.As<'a> null
+
+        ()
+
+    [<TestMethod>]
+    member this.TestMatchMany () =
+        
+        let q = MATCH (BindN bob "p")
+        
+        Assert.AreEqual(
+            $"MATCH (p:Person {{name:'Bob',color:'Blue'}})\n\
+                RETURN p",
+            q.ToString() )
+        
+        task {
+            let! bobs =
+                manybob
+                |> List.map ((fun b -> (CREATE (N b)).Run db))
+                |> Task.WhenAll
+
+            
+        
+            let! result = (MATCH (BindNLabeled<Person> "a")).Run db
+            for r in result do
+                let keys = r.Values.Keys
+                let values = r.Values.Values |> Seq.map Query.assume<Person>
+                ()//let r' = Seq.zip keys values |> Map.ofSeq
+                //printfn $"RECORD: {r'}"
+
+            let! _ =
+                manybob
+                |> List.map ((fun b -> (DELETE (BindN b "p")).Run db))
+                |> Task.WhenAll
+        
+            let! _ = (DELETE (BindN bob "p")).Run db
+            return ()
+        }
+        |> Async.AwaitTask |> Async.RunSynchronously
+        
+        let a (x: Neo4j.Driver.INode) = 
+            x.As<'a> null
+        
+        ()
+
+    [<TestMethod>]
+    member this.TestDelete () =
+        let d = DELETE (BindN bob "p")
+
+        Assert.AreEqual(
+            $"MATCH (p:Person {{name:'Bob',color:'Blue'}})\n\
+              DELETE p",
+            d.ToString() )
+
+        task {
+            let! result = d.Run db
+            for r in result do
+                let keys = r.Keys
+                let values = r.Values
+                let r' = Seq.zip keys values |> Map.ofSeq
+                printfn $"RECORD: {r'}"
+        }
+        |> Async.AwaitTask |> Async.RunSynchronously
 
 

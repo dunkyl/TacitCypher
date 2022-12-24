@@ -13,6 +13,7 @@ let cypherMany (db: Neo4j.Driver.IDriver) (q: string) =
                 return! cursor.ToListAsync (fun a -> a)
             }
     )
+    // TODO: Consider not using ToListAsync and instead implementing a f# async/c# task generator
 
 let cypherOne (db: Neo4j.Driver.IDriver) (q: string) =
     let s = db.AsyncSession()
