@@ -1,6 +1,6 @@
 # TacitCypher
 
-> The most beautiful code I have ever written is [here](https://github.com/dunkyl/TacitCypher/blob/main/TacitCypher/Pattern_via_interface.fs#L185-L271).
+> The most beautiful code I have ever written is [here](https://github.com/dunkyl/TacitCypher/blob/main/TacitCypher/Pattern_via_interface.fs#L207-L293).
 
 An inglorious attempt to implement a subset of the [Cypher Query Language](https://neo4j.com/developer/cypher-query-language/) in F#. Abandoned since I never got to be as type safe or as terse as I wanted.
 
