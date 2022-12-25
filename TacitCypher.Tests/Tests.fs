@@ -397,6 +397,8 @@ type TestQuerys2 () =
         let pattern =
             BindNErased<Person> {||} "z" -| RLabeled<IsCoworkersWith> |-> BindNErased<Person> {|name = "Yvon"|} "y"
 
+        let p2 = pattern --> BindN 3 "x"
+
         let (zack_returned, yvon_returned) = pattern.ReturnValues()
 
         ()

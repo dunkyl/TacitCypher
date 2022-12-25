@@ -24,6 +24,7 @@
     <Compile Include="Pattern_via_static_infer.fs" />
     <Compile Include="Pattern_via_overload.fs" />
     <Compile Include="Attributes.fs" />
+    <Compile Include="Return_projection_via_quotations.fs" />
     <Compile Include="Query.fs" />
     <Compile Include="Clause.fs" />
     <Compile Include="Library.fs" />
