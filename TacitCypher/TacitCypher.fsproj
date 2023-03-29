@@ -16,6 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Pattern_OpDynamicBinding.fs" />
     <Compile Include="Serialization.fs" />
     <Compile Include="Pattern_via_interface.fs" />
     <Compile Include="Pattern_langbindings.fs" />
